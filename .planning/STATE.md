@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-06-05T22:24:00Z"
-last_activity: 2026-06-05 -- 02-01 complete: think_stream screenshot fix (TDD)
+last_updated: "2026-06-05T22:34:24.501Z"
+last_activity: "2026-06-05 -- 02-01 complete: think_stream screenshot fix (TDD)"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -51,6 +51,7 @@ Progress: [████░░░░░░] 40%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 02-live-activity-ui P02-02 | 5 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - pytest installed into project venv (3.9-compatible); Brain test fixture stubs shutil.which to bypass real claude binary
 - MockBrain class-level concurrency counters enable serialize-vs-parallel overlap assertions in test_server_streaming.py
 - Defensive dual-path for screenshot image data: inner.get("data") for MCP shape (computer_use_server.py line 211), inner.get("source",{}).get("data") for Anthropic convention
+- [Phase 02-live-activity-ui]: timerId at module-level for newChat() access; timer guarded with if(!timerId)
+- [Phase 02-live-activity-ui]: innerHTML=0 gate: replaced elTranscript.innerHTML='' with removeChild loop
 
 ### Pending Todos
 

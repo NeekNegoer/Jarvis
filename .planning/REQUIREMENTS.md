@@ -19,9 +19,9 @@ it daily. Derived from PROJECT.md (Active) and `.planning/research/`. REQ-ID = `
 
 ### UI — Chrome experience
 - [ ] **UI-01**: Jarvis installs as a Chrome PWA — opens in its own standalone window with a dock icon, no browser tabs or address bar.
-- [ ] **UI-02**: During a Mac-control turn, Pietro sees a live activity view — each step / tool call appears as it happens, in plain language, instead of just "working…".
-- [ ] **UI-03**: Screenshots Jarvis takes mid-turn appear inline in the activity view.
-- [ ] **UI-04**: Activity steps can be expanded/collapsed for detail and an elapsed timer shows the turn is progressing; errors surface as a clear chip rather than silence.
+- [x] **UI-02**: During a Mac-control turn, Pietro sees a live activity view — each step / tool call appears as it happens, in plain language, instead of just "working…".
+- [x] **UI-03**: Screenshots Jarvis takes mid-turn appear inline in the activity view.
+- [x] **UI-04**: Activity steps can be expanded/collapsed for detail and an elapsed timer shows the turn is progressing; errors surface as a clear chip rather than silence.
 
 ### SKILL — Extensible skill system
 - [ ] **SKILL-01**: Jarvis loads self-contained skills from a `skills/` folder at startup, and the brain can discover and invoke them.
@@ -76,9 +76,9 @@ it daily. Derived from PROJECT.md (Active) and `.planning/research/`. REQ-ID = `
 | CORE-02 | Phase 1 | pending |
 | CORE-03 | Phase 1 | pending |
 | SEC-01 | Phase 1 | pending |
-| UI-02 | Phase 2 | pending |
-| UI-03 | Phase 2 | pending |
-| UI-04 | Phase 2 | pending |
+| UI-02 | Phase 2 | Complete |
+| UI-03 | Phase 2 | Complete |
+| UI-04 | Phase 2 | Complete |
 | SKILL-01 | Phase 3 | pending |
 | SKILL-02 | Phase 3 | pending |
 | SKILL-03 | Phase 3 | pending |
