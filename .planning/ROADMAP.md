@@ -43,7 +43,11 @@ Plans:
   2. Screenshots Jarvis captures mid-turn appear inline in the activity panel as image thumbnails — no extra action needed from Pietro
   3. An elapsed timer ticks visibly while the turn runs; any step can be expanded to show raw detail or collapsed to a summary line
   4. When a turn fails, a red error chip with a short message appears instead of silence or a frozen spinner
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Fix think_stream to emit screenshot events from `user` tool_result blocks (+ test)
+- [ ] 02-02-PLAN.md — Activity panel in app.js: bilingual step cards, inline screenshots+lightbox, timer, collapse, error chip
+- [ ] 02-03-PLAN.md — Style the panel to match the dark/gold aesthetic + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 3: Skill System + Google Classroom
@@ -83,7 +87,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Brain Unlock | 0/4 | Not started | - |
-| 2. Live Activity UI | 0/TBD | Not started | - |
+| 2. Live Activity UI | 0/3 | Planned | - |
 | 3. Skill System + Google Classroom | 0/TBD | Not started | - |
 | 4. PWA | 0/TBD | Not started | - |
 | 5. Echo Cancellation | 0/TBD | Not started | - |
