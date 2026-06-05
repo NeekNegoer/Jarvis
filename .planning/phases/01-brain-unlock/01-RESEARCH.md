@@ -291,7 +291,7 @@ def think_stream(self, user_text: str):
                     elif bt == "text":
                         text = block.get("text", "")
                         if text:
-                            yield {"type": "text_delta", "text": text}
+                            yield {"type": "text", "text": text}   # event type is "text" (matches the plans/tests)
                     elif bt == "tool_use":
                         yield {"type": "tool_use", "name": block.get("name"),
                                "input": block.get("input", {})}  # [ASSUMED: not verified in this run]
@@ -412,22 +412,22 @@ if origin and origin not in _ALLOWED_ORIGINS:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Empirical verification of computer-use event shapes (A1, A2)**
+1. **Empirical verification of computer-use event shapes (A1, A2)** — RESOLVED: deferred to first-run debug logging. Plan 01-02 Task 2 adds a `JARVIS_STREAM_DEBUG` mode that dumps raw NDJSON lines so the `tool_use`/`tool_result` shapes are confirmed on the first real computer-use turn; parsing is defensive (`.get()` at every level) so unknown shapes degrade gracefully rather than crashing.
    - What we know: Simple text-only turns verified empirically
    - What's unclear: Exact field names for `tool_use` and `tool_result` content blocks in a real computer-use turn
-   - Recommendation: First plan task should include a debug/logging mode that dumps raw NDJSON lines to a file for the first computer-use turn, so A1/A2 can be confirmed without another research pass
+   - Disposition: debug logging in Plan 01-02 + defensive parsing; no extra research pass needed
 
-2. **SessionStore TTL / cleanup**
+2. **SessionStore TTL / cleanup** — RESOLVED: skipped for Phase 1, deferred to Phase 2. Plan 01-03 threat model (T-01-05) accepts unbounded `_sessions`/`_jobs` growth as non-critical for a single user and defers TTL cleanup to Phase 2.
    - What we know: `_sessions` dict will grow one Brain per session_token forever
    - What's unclear: Whether TTL cleanup is needed for Phase 1 (single user, one session at a time)
-   - Recommendation: Skip TTL for Phase 1; add a note. A single-user tool with one active session never accumulates enough entries to matter.
+   - Disposition: skip TTL in Phase 1; revisit in Phase 2
 
-3. **TCP_NODELAY / Nagle buffering**
+3. **TCP_NODELAY / Nagle buffering** — RESOLVED: set explicitly at startup. Plan 01-03 Task 1 adds `httpd.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)` in `main()` — safe regardless of `ThreadingHTTPServer` defaults.
    - What we know: PITFALLS.md recommends `socket.TCP_NODELAY` to defeat Nagle on SSE connections
    - What's unclear: Whether `ThreadingHTTPServer` already sets this, or if it must be set at server startup
-   - Recommendation: Add `httpd.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)` in `main()` after creating the server — safe to add regardless.
+   - Disposition: set it explicitly in Plan 01-03
 
 ---
 
@@ -449,7 +449,7 @@ if origin and origin not in _ALLOWED_ORIGINS:
 | CORE-01 | POST /api/turn returns immediately (< 1s) even while brain runs | integration | `python test_server_streaming.py::test_turn_nonblocking` | No — Wave 0 |
 | CORE-01 | UI thread not blocked: second request during active turn gets response | integration | `python test_server_streaming.py::test_concurrent_request_not_blocked` | No — Wave 0 |
 | CORE-02 | GET /api/stream/<id> receives multiple data: events before "done" | integration | `python test_server_streaming.py::test_sse_events_incremental` | No — Wave 0 |
-| CORE-02 | Events arrive with correct type fields (text_delta, tool_use, result, done) | unit | `python test_brain_stream.py::test_event_types` | No — Wave 0 |
+| CORE-02 | Events arrive with correct type fields (text, tool_use, result, done) | unit | `python test_brain_stream.py::test_event_types` | No — Wave 0 |
 | CORE-03 | Two turns on same session_token queue (second starts only after first finishes) | integration | `python test_server_streaming.py::test_concurrent_turns_serialize` | No — Wave 0 |
 | CORE-03 | Two turns on different session_tokens run in parallel (no cross-blocking) | integration | `python test_server_streaming.py::test_different_sessions_parallel` | No — Wave 0 |
 | SEC-01 | POST /api/turn with foreign Origin returns 403 | unit | `python test_server_streaming.py::test_origin_check_post` | No — Wave 0 |
