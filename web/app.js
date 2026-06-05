@@ -1,4 +1,5 @@
-/* Jarvis web UI — voice in the browser (Chrome Web Speech API), brain over /api/ask. */
+/* Jarvis web UI — voice in the browser (Chrome Web Speech API); streams turns over
+   /api/turn + /api/stream (SSE) so the page never freezes (Phase 1: Brain Unlock). */
 (() => {
   "use strict";
 
@@ -15,6 +16,7 @@
   let busy = false;                                        // thinking or speaking
   let recog = null;
   let health = null;                                       // {accessibility, screen_recording} from /api/health
+  let es = null;                                           // active SSE EventSource for the current streaming turn
 
   // Labels for replies that didn't come from the Max-plan brain, so Pietro can tell.
   const SRC_LABEL = {
@@ -117,9 +119,16 @@
   }
 
   // ---- talking to the brain ----------------------------------------------------
+  // Stream a turn: POST /api/turn -> {job_id}, then read /api/stream/<id> over SSE.
+  // The page never blocks — text and tool steps arrive incrementally, and New Chat
+  // stays clickable while Jarvis is thinking (Phase 1 success criteria 1 & 2).
   async function send(text) {
     text = (text || "").trim();
-    if (!text || busy) return;
+    if (!text) return;
+    if (busy) {  // don't freeze — just let him know the current turn is still running
+      elHint.textContent = lang === "pt" ? "Jarvis ainda está respondendo…" : "Jarvis is still replying…";
+      return;
+    }
     busy = true;
     addMsg("you", text);
     elText.value = "";
@@ -127,24 +136,92 @@
     // Mac-control turns can take a while (open apps, click, read the screen) — say so.
     if (control) elHint.textContent = lang === "pt" ? "trabalhando no seu Mac…" : "working on your Mac…";
     const ph = addMsg("jarvis", "…", true);
+    const bodyEl = ph.querySelector(".body");
+
+    let acc = "";          // text streamed so far (shown live)
+    let finalReply = "";   // canonical answer from the result event (used for the voice)
+    let source = "max";
+    let done = false;
+
+    // Offline guarantee: if the streaming turn produced no answer (e.g. the Max brain is
+    // offline → error event with no text), fall back to /api/ask, which degrades to the
+    // local Ollama brain. Reuses the existing sync path so the source badge still works.
+    const fallbackToAsk = async () => {
+      try {
+        const r = await fetch("/api/ask", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, control, lang }),
+        });
+        const d = await r.json();
+        const reply = d.reply || "…";
+        ph.classList.remove("ph");
+        bodyEl.textContent = reply;
+        markSource(ph, d.source);
+        elTranscript.scrollTop = elTranscript.scrollHeight;
+        speak(reply, () => { busy = false; afterTurn(); });
+      } catch (_) {
+        ph.classList.remove("ph");
+        bodyEl.textContent =
+          lang === "pt" ? "Não consegui falar com o cérebro do Jarvis." : "Couldn't reach Jarvis's brain.";
+        markSource(ph, "error");
+        busy = false; afterTurn();
+      }
+    };
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (es) { es.close(); es = null; }
+      if (source === "error" && !acc.trim() && !finalReply) { fallbackToAsk(); return; }
+      const reply = acc.trim() || finalReply || "…";
+      ph.classList.remove("ph");
+      bodyEl.textContent = reply;
+      markSource(ph, source);
+      elTranscript.scrollTop = elTranscript.scrollHeight;
+      speak(finalReply || reply, () => { busy = false; afterTurn(); });
+    };
+
     try {
-      const r = await fetch("/api/ask", {
+      const r = await fetch("/api/turn", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, control, lang }),
       });
+      if (!r.ok) throw new Error("turn " + r.status);
       const data = await r.json();
-      const reply = data.reply || "…";
-      ph.classList.remove("ph");
-      ph.querySelector(".body").textContent = reply;
-      markSource(ph, data.source);
-      elTranscript.scrollTop = elTranscript.scrollHeight;
-      speak(reply, () => { busy = false; afterTurn(); });
+      if (!data.job_id) throw new Error("no job_id");
+
+      es = new EventSource("/api/stream/" + encodeURIComponent(data.job_id));
+
+      es.onmessage = (e) => {
+        let ev;
+        try { ev = JSON.parse(e.data); } catch (_) { return; }
+        if (ev.type === "text") {
+          acc += ev.text || "";
+          ph.classList.remove("ph");
+          bodyEl.textContent = acc;
+          elTranscript.scrollTop = elTranscript.scrollHeight;
+        } else if (ev.type === "tool_use") {
+          // live step label — Phase 2 turns these into persistent activity cards
+          elHint.textContent = "🔧 " + (ev.name || (lang === "pt" ? "ação" : "action")) + "…";
+        } else if (ev.type === "screenshot") {
+          elHint.textContent = lang === "pt" ? "📸 capturando a tela…" : "📸 capturing the screen…";
+        } else if (ev.type === "result") {
+          finalReply = ev.text || "";
+        } else if (ev.type === "error") {
+          source = "error";
+          if (!acc) acc = ev.text || (lang === "pt" ? "Algo deu errado." : "Something went wrong.");
+        }
+        // {"type":"done"} also arrives, but the named "done" event below is what finalizes.
+      };
+
+      es.addEventListener("done", finish);
+      // A dropped/closed connection (after the stream ends, or a real network blip)
+      // surfaces here; finalize with whatever we have and stop EventSource from retrying.
+      es.onerror = finish;
     } catch (e) {
-      ph.classList.remove("ph");
-      ph.querySelector(".body").textContent =
-        lang === "pt" ? "Não consegui falar com o cérebro do Jarvis." : "Couldn't reach Jarvis's brain.";
-      markSource(ph, "error");
-      busy = false; afterTurn();
+      if (es) { es.close(); es = null; }
+      // /api/turn unreachable or malformed — try the sync path (also covers offline → Ollama).
+      fallbackToAsk();
     }
   }
 
@@ -208,11 +285,14 @@
     else { conversing = true; if (window.speechSynthesis) speechSynthesis.cancel(); startRecog(); }
   }
 
-  // Start a fresh conversation: forget the brain's session and clear the screen.
+  // Start a fresh conversation. Works even mid-turn (Phase 1 non-freeze): it abandons the
+  // current stream, forgets the brain's session, and clears the screen. The in-flight server
+  // turn finishes on its own — we just stop listening to it.
   async function newChat() {
-    if (busy) return;
+    if (es) { es.close(); es = null; }
     if (window.speechSynthesis) speechSynthesis.cancel();
     conversing = false; stopRecog();
+    busy = false;
     try { await fetch("/api/reset", { method: "POST" }); } catch (_) {}
     elTranscript.innerHTML = "";
     setState("idle");
