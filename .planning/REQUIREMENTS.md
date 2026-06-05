@@ -72,18 +72,18 @@ it daily. Derived from PROJECT.md (Active) and `.planning/research/`. REQ-ID = `
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| CORE-01 | — | pending |
-| CORE-02 | — | pending |
-| CORE-03 | — | pending |
-| UI-01 | — | pending |
-| UI-02 | — | pending |
-| UI-03 | — | pending |
-| UI-04 | — | pending |
-| SKILL-01 | — | pending |
-| SKILL-02 | — | pending |
-| SKILL-03 | — | pending |
-| CLASS-01 | — | pending |
-| CLASS-02 | — | pending |
-| CLASS-03 | — | pending |
-| AUDIO-01 | — | pending |
-| SEC-01 | — | pending |
+| CORE-01 | Phase 1 | pending |
+| CORE-02 | Phase 1 | pending |
+| CORE-03 | Phase 1 | pending |
+| SEC-01 | Phase 1 | pending |
+| UI-02 | Phase 2 | pending |
+| UI-03 | Phase 2 | pending |
+| UI-04 | Phase 2 | pending |
+| SKILL-01 | Phase 3 | pending |
+| SKILL-02 | Phase 3 | pending |
+| SKILL-03 | Phase 3 | pending |
+| CLASS-01 | Phase 3 | pending |
+| CLASS-02 | Phase 3 | pending |
+| CLASS-03 | Phase 3 | pending |
+| UI-01 | Phase 4 | pending |
+| AUDIO-01 | Phase 5 | pending |
