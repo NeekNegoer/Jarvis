@@ -64,6 +64,81 @@
     div.querySelector(".who").appendChild(b);
   }
 
+  // ---- activity panel helpers (Phase 2: UI-02) --------------------------------
+  function toolKey(name) {
+    return (name || "").replace(/^mcp__computer__/, "");
+  }
+
+  function stepLabel(name, input, lang) {
+    const key = toolKey(name);
+    const inp = input || {};
+    const MAP = {
+      screenshot:       { icon: "📸", pt: "Tirou um print",           en: "Took a screenshot" },
+      screen_info:      { icon: "📐", pt: "Mediu a tela",             en: "Measured the screen" },
+      click:            { icon: "🖱️",  pt: "Clicou",                  en: "Clicked" },
+      double_click:     { icon: "🖱️",  pt: "Clique duplo",            en: "Double-clicked" },
+      right_click:      { icon: "🖱️",  pt: "Clique direito",          en: "Right-clicked" },
+      move_mouse:       { icon: "🖱️",  pt: "Moveu o mouse",           en: "Moved the mouse" },
+      scroll:           { icon: "🖱️",  pt: "Rolou a tela",            en: "Scrolled" },
+      type_text:        { icon: "⌨️",   pt: "Digitou \"" + String(inp.text || "").slice(0, 40) + "\"",
+                                        en: "Typed \""   + String(inp.text || "").slice(0, 40) + "\"" },
+      key:              { icon: "⌨️",   pt: "Tecla "   + (inp.key || inp.keys || ""),
+                                        en: "Pressed " + (inp.key || inp.keys || "") },
+      open_app:         { icon: "🚀", pt: "Abriu "  + (inp.name || inp.app || ""),
+                                      en: "Opened " + (inp.name || inp.app || "") },
+      frontmost_app:    { icon: "👀", pt: "Viu o app ativo",          en: "Checked active app" },
+      list_ui_elements: { icon: "👀", pt: "Leu a tela",               en: "Read the screen" },
+      click_element:    { icon: "🖱️",  pt: "Clicou em " + (inp.label || inp.text || ""),
+                                       en: "Clicked "   + (inp.label || inp.text || "") },
+      run_applescript:  { icon: "📜", pt: "Rodou um AppleScript",     en: "Ran AppleScript" },
+      remember:         { icon: "🧠", pt: "Memorizou",                en: "Remembered" },
+      ToolSearch:       { icon: "🔎", pt: "Procurou ferramenta",      en: "Searched tools" },
+    };
+    const entry = MAP[key];
+    if (!entry) return { icon: "🔧", text: key };
+    return { icon: entry.icon, text: lang === "pt" ? entry.pt : entry.en };
+  }
+
+  function ensureActivityPanel(bubble) {
+    const existing = bubble.querySelector(".activity");
+    if (existing) return existing;
+    const section = document.createElement("section");
+    section.className = "activity";
+    const head = document.createElement("div");
+    head.className = "activity-head";
+    const timerEl = document.createElement("span");
+    timerEl.className = "activity-timer";
+    timerEl.textContent = "0:00";
+    head.appendChild(timerEl);
+    section.appendChild(head);
+    const bodyEl = bubble.querySelector(".body");
+    bubble.insertBefore(section, bodyEl);
+    return section;
+  }
+
+  function addStepCard(panel, ev) {
+    const { icon, text } = stepLabel(ev.name, ev.input, lang);
+    const step = document.createElement("div");
+    step.className = "step";
+
+    const iconEl = document.createElement("span");
+    iconEl.className = "step-icon";
+    iconEl.textContent = icon;
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "step-label";
+    labelEl.textContent = text;
+
+    const detail = document.createElement("pre");
+    detail.className = "step-detail";
+    detail.textContent = JSON.stringify(ev.input || {}, null, 2);
+
+    step.append(iconEl, labelEl, detail);
+    panel.appendChild(step);
+    elTranscript.scrollTop = elTranscript.scrollHeight;
+    return step;
+  }
+
   // ---- toggles -----------------------------------------------------------------
   function renderLang() { elLang.textContent = lang === "pt" ? "🇧🇷 PT" : "🇺🇸 EN"; }
   function renderControl() {
@@ -201,7 +276,8 @@
           bodyEl.textContent = acc;
           elTranscript.scrollTop = elTranscript.scrollHeight;
         } else if (ev.type === "tool_use") {
-          // live step label — Phase 2 turns these into persistent activity cards
+          const panel = ensureActivityPanel(ph); ph.classList.remove("ph");
+          addStepCard(panel, { name: ev.name, input: ev.input || {} });
           elHint.textContent = "🔧 " + (ev.name || (lang === "pt" ? "ação" : "action")) + "…";
         } else if (ev.type === "screenshot") {
           elHint.textContent = lang === "pt" ? "📸 capturando a tela…" : "📸 capturing the screen…";
@@ -294,7 +370,7 @@
     conversing = false; stopRecog();
     busy = false;
     try { await fetch("/api/reset", { method: "POST" }); } catch (_) {}
-    elTranscript.innerHTML = "";
+    while (elTranscript.firstChild) elTranscript.removeChild(elTranscript.firstChild);
     setState("idle");
     elHint.textContent = HINTS.idle[lang];
   }
