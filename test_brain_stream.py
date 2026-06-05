@@ -94,6 +94,95 @@ class FakePopen:
         """No-op."""
 
 
+def FakePopenWith(lines):
+    """Return a Popen-compatible class that replays the given lines list.
+
+    Usage: monkeypatch.setattr(brain_module.subprocess, "Popen", FakePopenWith(my_lines))
+    """
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            self.stdout = iter(list(lines))
+            self.stderr = io.StringIO("")
+            self.returncode = 0
+
+        def wait(self, timeout=None):
+            pass
+
+        def kill(self):
+            pass
+
+    return _FakePopen
+
+
+# ---------------------------------------------------------------------------
+# NDJSON lines for screenshot (user-event) tests.
+# Reflects stream_debug_findings.md §3: tool results arrive as `user` events
+# whose message.content[] holds tool_result blocks with inner content[].
+# ---------------------------------------------------------------------------
+
+# MCP shape: computer_use_server.py _screenshot_result() returns
+#   {"type": "image", "data": "<b64>", "mimeType": "image/png"}
+# (line 211 of computer_use_server.py — `data` field, no `source` wrapper).
+USER_SCREENSHOT_LINE = json.dumps({
+    "type": "user",
+    "message": {
+        "content": [
+            {
+                "type": "tool_result",
+                "content": [
+                    {"type": "image", "data": "AAAA", "mimeType": "image/png"},
+                ],
+            }
+        ]
+    },
+}) + "\n"
+
+# Anthropic convention shape: image wrapped in source.data (defensive dual-path).
+USER_SOURCE_SCREENSHOT_LINE = json.dumps({
+    "type": "user",
+    "message": {
+        "content": [
+            {
+                "type": "tool_result",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "data": "BBBB"}},
+                ],
+            }
+        ]
+    },
+}) + "\n"
+
+# A user/tool_result whose inner content has only text — must yield NO screenshot event.
+USER_TEXT_RESULT_LINE = json.dumps({
+    "type": "user",
+    "message": {
+        "content": [
+            {
+                "type": "tool_result",
+                "content": [
+                    {"type": "text", "text": "Tool completed successfully"},
+                ],
+            }
+        ]
+    },
+}) + "\n"
+
+_RESULT_LINE = json.dumps({
+    "type": "result",
+    "subtype": "success",
+    "is_error": False,
+    "result": "Done.",
+    "session_id": "sess-screenshot",
+    "stop_reason": "end_turn",
+}) + "\n"
+
+_SYSTEM_LINE = json.dumps({
+    "type": "system",
+    "subtype": "init",
+    "session_id": "sess-old",
+}) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -213,3 +302,77 @@ def test_has_per_brain_lock(brain):
     lock = brain._lock
     assert hasattr(lock, "acquire"), "brain._lock must be a threading.Lock-compatible object"
     assert hasattr(lock, "release"), "brain._lock must be a threading.Lock-compatible object"
+
+
+# ---------------------------------------------------------------------------
+# Screenshot / user-event tests (Phase 2, Plan 01).
+# Verify that think_stream emits {"type":"screenshot","data":<b64>} from the
+# `user` event that wraps tool_result blocks (stream_debug_findings.md §3).
+# ---------------------------------------------------------------------------
+
+
+def test_screenshot_from_user_event_mcp_shape(monkeypatch, brain):
+    """think_stream emits screenshot event from `user` tool_result with MCP image shape.
+
+    computer_use_server.py returns {"type":"image","data":"<b64>","mimeType":"image/png"}.
+    The claude CLI wraps it inside a `user` event message.content[].tool_result.content[].
+    think_stream must read inner.get("data") and yield {"type":"screenshot","data":"AAAA"}.
+    """
+    import brain as brain_module
+
+    lines = [_SYSTEM_LINE, USER_SCREENSHOT_LINE, _RESULT_LINE]
+    monkeypatch.setattr(brain_module.subprocess, "Popen", FakePopenWith(lines))
+
+    events = list(brain.think_stream("take a screenshot"))
+    screenshot_events = [e for e in events if e["type"] == "screenshot"]
+
+    assert len(screenshot_events) == 1, (
+        "Expected exactly 1 screenshot event from MCP-shape user event, got: "
+        + str(screenshot_events)
+    )
+    assert screenshot_events[0]["data"] == "AAAA", (
+        "Expected data='AAAA', got: " + repr(screenshot_events[0].get("data"))
+    )
+
+
+def test_screenshot_from_user_event_source_shape(monkeypatch, brain):
+    """think_stream emits screenshot event from `user` tool_result with Anthropic image shape.
+
+    Anthropic convention wraps base64 as {"type":"image","source":{"type":"base64","data":"BBBB"}}.
+    Defensive dual-path: inner.get("source",{}).get("data") fallback must fire here.
+    """
+    import brain as brain_module
+
+    lines = [_SYSTEM_LINE, USER_SOURCE_SCREENSHOT_LINE, _RESULT_LINE]
+    monkeypatch.setattr(brain_module.subprocess, "Popen", FakePopenWith(lines))
+
+    events = list(brain.think_stream("take a screenshot"))
+    screenshot_events = [e for e in events if e["type"] == "screenshot"]
+
+    assert len(screenshot_events) == 1, (
+        "Expected exactly 1 screenshot event from Anthropic-shape user event, got: "
+        + str(screenshot_events)
+    )
+    assert screenshot_events[0]["data"] == "BBBB", (
+        "Expected data='BBBB', got: " + repr(screenshot_events[0].get("data"))
+    )
+
+
+def test_user_text_result_no_screenshot(monkeypatch, brain):
+    """think_stream yields NO screenshot event when user tool_result contains only text.
+
+    A `user` event whose inner content[] has only text blocks must not crash or
+    emit spurious screenshot events. Confirms the defensive guard on inner block type.
+    """
+    import brain as brain_module
+
+    lines = [_SYSTEM_LINE, USER_TEXT_RESULT_LINE, _RESULT_LINE]
+    monkeypatch.setattr(brain_module.subprocess, "Popen", FakePopenWith(lines))
+
+    events = list(brain.think_stream("do something"))
+    screenshot_events = [e for e in events if e["type"] == "screenshot"]
+
+    assert len(screenshot_events) == 0, (
+        "Expected no screenshot events from text-only tool_result, got: "
+        + str(screenshot_events)
+    )
