@@ -45,7 +45,7 @@ Plans:
   4. When a turn fails, a red error chip with a short message appears instead of silence or a frozen spinner
 **Plans**: 3 plans
 Plans:
-- [ ] 02-01-PLAN.md — Fix think_stream to emit screenshot events from `user` tool_result blocks (+ test)
+- [x] 02-01-PLAN.md — Fix think_stream to emit screenshot events from `user` tool_result blocks (+ test)
 - [ ] 02-02-PLAN.md — Activity panel in app.js: bilingual step cards, inline screenshots+lightbox, timer, collapse, error chip
 - [ ] 02-03-PLAN.md — Style the panel to match the dark/gold aesthetic + human-verify checkpoint
 **UI hint**: yes
@@ -86,8 +86,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Brain Unlock | 0/4 | Not started | - |
-| 2. Live Activity UI | 0/3 | Planned | - |
+| 1. Brain Unlock | 4/4 | Complete | 2026-06-05 |
+| 2. Live Activity UI | 1/3 | In progress | - |
 | 3. Skill System + Google Classroom | 0/TBD | Not started | - |
 | 4. PWA | 0/TBD | Not started | - |
 | 5. Echo Cancellation | 0/TBD | Not started | - |
