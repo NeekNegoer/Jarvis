@@ -32,7 +32,7 @@ Plans:
 - [x] 01-01-PLAN.md — Wave 0 test scaffold (RED): test_brain_stream.py + test_server_streaming.py
 - [x] 01-02-PLAN.md — brain.py: think_stream() + _build_stream_cmd(--verbose) + per-Brain lock
 - [x] 01-03-PLAN.md — server.py: SessionStore, JobRegistry, /api/turn, /api/stream SSE, Origin check
-- [ ] 01-04-PLAN.md — integration suite + human checkpoint (live streaming, non-freeze, real tool shapes)
+- [x] 01-04-PLAN.md — integration suite + human checkpoint (live streaming, non-freeze, real tool shapes)
 
 ### Phase 2: Live Activity UI
 **Goal**: During a Mac-control turn Pietro sees a live panel showing each step, inline screenshots, an elapsed timer, collapsible detail, and clear error display
