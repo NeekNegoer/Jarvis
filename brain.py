@@ -215,13 +215,26 @@ class Brain:
                                 "name": block.get("name"),
                                 "input": block.get("input", {}),
                             }
-                elif t == "tool_result":  # [ASSUMED: not verified in this run]
-                    for block in obj.get("content", []):
-                        if block.get("type") == "image":
-                            yield {
-                                "type": "screenshot",
-                                "data": block.get("source", {}).get("data", ""),
-                            }
+                elif t == "user":
+                    # Tool results arrive as `user` events (stream_debug_findings.md §3).
+                    # message.content[] holds tool_result blocks; inner content[] holds
+                    # image blocks.  Defensive: tolerate missing/non-list at each level.
+                    # Dual-path for image data:
+                    #   MCP shape   (computer_use_server.py line 211): inner["data"]
+                    #   Anthropic shape (convention):                   inner["source"]["data"]
+                    for block in (obj.get("message") or {}).get("content", []):
+                        if block.get("type") != "tool_result":
+                            continue
+                        for inner in (block.get("content") or []):
+                            if inner.get("type") != "image":
+                                continue
+                            data = (
+                                inner.get("data")
+                                or (inner.get("source") or {}).get("data")
+                                or ""
+                            )
+                            if data:
+                                yield {"type": "screenshot", "data": data}
                 elif t == "result":
                     final_text = (obj.get("result") or "").strip()
                     if obj.get("session_id"):
