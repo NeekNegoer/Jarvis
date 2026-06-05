@@ -17,6 +17,7 @@
   let recog = null;
   let health = null;                                       // {accessibility, screen_recording} from /api/health
   let es = null;                                           // active SSE EventSource for the current streaming turn
+  let lightbox = null;                                     // singleton fullscreen lightbox (created lazily)
 
   // Labels for replies that didn't come from the Max-plan brain, so Pietro can tell.
   const SRC_LABEL = {
@@ -137,6 +138,39 @@
     panel.appendChild(step);
     elTranscript.scrollTop = elTranscript.scrollHeight;
     return step;
+  }
+
+  // ---- screenshot helpers (Phase 2: UI-03) ------------------------------------
+  function ensureLightbox() {
+    if (lightbox) return lightbox;
+    lightbox = document.createElement("div");
+    lightbox.className = "lightbox";
+    const img = document.createElement("img");
+    img.alt = lang === "pt" ? "captura de tela ampliada" : "enlarged screenshot";
+    lightbox.appendChild(img);
+    lightbox.onclick = () => lightbox.classList.remove("open");
+    document.body.appendChild(lightbox);
+    return lightbox;
+  }
+
+  function addShot(panel, b64) {
+    if (!b64) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "shot";
+    const img = document.createElement("img");
+    img.src = "data:image/png;base64," + b64;
+    img.alt = lang === "pt" ? "captura de tela" : "screenshot";
+    img.loading = "lazy";
+    img.onclick = () => {
+      const lb = ensureLightbox();
+      const lbImg = lb.querySelector("img");
+      lbImg.src = "data:image/png;base64," + b64;
+      lbImg.alt = img.alt;
+      lb.classList.add("open");
+    };
+    wrapper.appendChild(img);
+    panel.appendChild(wrapper);
+    elTranscript.scrollTop = elTranscript.scrollHeight;
   }
 
   // ---- toggles -----------------------------------------------------------------
@@ -280,6 +314,8 @@
           addStepCard(panel, { name: ev.name, input: ev.input || {} });
           elHint.textContent = "🔧 " + (ev.name || (lang === "pt" ? "ação" : "action")) + "…";
         } else if (ev.type === "screenshot") {
+          const panel = ensureActivityPanel(ph); ph.classList.remove("ph");
+          if (ev.data) addShot(panel, ev.data);
           elHint.textContent = lang === "pt" ? "📸 capturando a tela…" : "📸 capturing the screen…";
         } else if (ev.type === "result") {
           finalReply = ev.text || "";
@@ -390,8 +426,10 @@
     if (e.key === "Enter" && elText.value.trim()) { e.preventDefault(); conversing = false; send(elText.value); }
   });
   // Escape: hush the voice and drop out of hands-free, without touching the transcript.
+  // Also closes the screenshot lightbox if open.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
+    if (lightbox && lightbox.classList.contains("open")) { lightbox.classList.remove("open"); return; }
     if (window.speechSynthesis) speechSynthesis.cancel();
     if (conversing) { conversing = false; stopRecog(); if (!busy) setState("idle"); }
   });
