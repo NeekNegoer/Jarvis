@@ -27,7 +27,12 @@ Milestone 2 transforms Jarvis from a working v1 into a genuinely great daily dri
   2. Text updates and tool-call step labels arrive in the browser as they happen, not only after the turn completes
   3. A cross-origin page (not http://127.0.0.1:8765) cannot POST to /api/turn or /api/ask — the server returns 403
   4. Two near-simultaneous turns on the same session queue safely — the second starts after the first finishes, with no JSON-RPC corruption on the MCP pipe
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Wave 0 test scaffold (RED): test_brain_stream.py + test_server_streaming.py
+- [ ] 01-02-PLAN.md — brain.py: think_stream() + _build_stream_cmd(--verbose) + per-Brain lock
+- [ ] 01-03-PLAN.md — server.py: SessionStore, JobRegistry, /api/turn, /api/stream SSE, Origin check
+- [ ] 01-04-PLAN.md — integration suite + human checkpoint (live streaming, non-freeze, real tool shapes)
 
 ### Phase 2: Live Activity UI
 **Goal**: During a Mac-control turn Pietro sees a live panel showing each step, inline screenshots, an elapsed timer, collapsible detail, and clear error display
@@ -77,7 +82,7 @@ Milestone 2 transforms Jarvis from a working v1 into a genuinely great daily dri
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Brain Unlock | 0/TBD | Not started | - |
+| 1. Brain Unlock | 0/4 | Not started | - |
 | 2. Live Activity UI | 0/TBD | Not started | - |
 | 3. Skill System + Google Classroom | 0/TBD | Not started | - |
 | 4. PWA | 0/TBD | Not started | - |

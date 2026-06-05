@@ -1,0 +1,24 @@
+# Jarvis dependencies
+
+# --- The ears (speech -> text, runs locally & free) ---
+mlx-whisper>=0.4.0       # Metal-accelerated Whisper for Apple Silicon (preferred, fast)
+faster-whisper>=1.0.0    # CPU fallback for non-Apple-Silicon / if mlx is unavailable
+sounddevice>=0.4.6       # microphone recording
+numpy>=1.24.0            # audio buffers
+scipy>=1.10.0            # read/write .wav
+
+# --- The brain ---
+# No Python package needed: the brain shells out to the `claude` CLI (your Max plan).
+# Install Claude Code separately and log in: https://claude.com/claude-code
+
+# --- Computer use (system-wide control of the Mac) ---
+pyobjc-framework-Quartz>=10.0              # screenshots + mouse/keyboard CGEvents
+pyobjc-framework-ApplicationServices>=10.0 # Accessibility API (find UI elements by name)
+pyobjc-framework-Cocoa>=10.0               # frontmost app / NSWorkspace
+pillow>=10.0                               # image handling for screenshots
+
+# --- Optional: global hotkey (hotkey.py — talk to Jarvis from anywhere) ---
+pynput>=1.7                                # listens for the global push-to-talk hotkey
+
+# The mouth uses macOS's built-in `say` — no package needed.
+# python-dotenv is no longer required (no API key / .env), but harmless if present.

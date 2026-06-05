@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Jarvis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Spline+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="state-idle">
+  <div class="grain" aria-hidden="true"></div>
+  <div class="aura" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="statusDot"></span>
+      <span class="wordmark">Jarvis</span>
+    </div>
+    <div class="topright">
+      <span class="status" id="statusText">ready</span>
+      <button class="ghost" id="newChat" title="Start a fresh conversation" aria-label="New conversation">new</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div class="orb" id="orb" role="button" tabindex="0" aria-label="Tap to talk">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <div class="core"></div>
+      <div class="glint"></div>
+    </div>
+    <p class="hint" id="hint">tap the orb to talk — or just type below</p>
+
+    <section class="transcript" id="transcript" aria-live="polite"></section>
+  </main>
+
+  <footer class="composer">
+    <div class="toggles">
+      <button class="chip" id="langToggle" title="Recognition language">🇺🇸 EN</button>
+      <button class="chip" id="controlToggle" title="Let Jarvis control your Mac">🖥️ Mac control: off</button>
+    </div>
+    <div class="inputrow">
+      <input id="text" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Ask Jarvis anything…  (Enter to send)" />
+      <button class="mic" id="mic" aria-label="Talk">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z" fill="currentColor"/>
+          <path d="M6 11a6 6 0 0 0 12 0M12 17v3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

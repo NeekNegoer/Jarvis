@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "computer": {
+      "command": "/Users/pietrojustino/Documents/Jarvis/.venv/bin/python",
+      "args": ["/Users/pietrojustino/Documents/Jarvis/computer_use_server.py"]
+    }
+  }
+}
