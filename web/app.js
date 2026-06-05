@@ -18,6 +18,7 @@
   let health = null;                                       // {accessibility, screen_recording} from /api/health
   let es = null;                                           // active SSE EventSource for the current streaming turn
   let lightbox = null;                                     // singleton fullscreen lightbox (created lazily)
+  let timerId = null;                                      // active elapsed-timer interval; cleared on turn end
 
   // Labels for replies that didn't come from the Max-plan brain, so Pietro can tell.
   const SRC_LABEL = {
@@ -63,6 +64,25 @@
     b.className = `badge badge-${source}`;
     b.textContent = label;
     div.querySelector(".who").appendChild(b);
+  }
+
+  // ---- activity panel helpers (Phase 2: UI-02 / UI-04) -----------------------
+  function fmtElapsed(ms) {
+    const s = Math.floor(ms / 1000);
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function addErrorChip(bubble, msg) {
+    const chip = document.createElement("div");
+    chip.className = "activity-error";
+    chip.textContent = "⚠️ " + (msg || (lang === "pt" ? "Algo deu errado." : "Something went wrong."));
+    const panel = bubble.querySelector(".activity");
+    if (panel) {
+      bubble.insertBefore(chip, panel.nextSibling);
+    } else {
+      const bodyEl = bubble.querySelector(".body");
+      bubble.insertBefore(chip, bodyEl);
+    }
   }
 
   // ---- activity panel helpers (Phase 2: UI-02) --------------------------------
@@ -121,6 +141,11 @@
     const { icon, text } = stepLabel(ev.name, ev.input, lang);
     const step = document.createElement("div");
     step.className = "step";
+    step.setAttribute("role", "button");
+    step.setAttribute("tabindex", "0");
+    step.title = lang === "pt" ? "ver detalhe" : "show detail";
+    step.onclick = () => step.classList.toggle("expanded");
+    step.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); step.classList.toggle("expanded"); } };
 
     const iconEl = document.createElement("span");
     iconEl.className = "step-icon";
@@ -246,6 +271,7 @@
     if (control) elHint.textContent = lang === "pt" ? "trabalhando no seu Mac…" : "working on your Mac…";
     const ph = addMsg("jarvis", "…", true);
     const bodyEl = ph.querySelector(".body");
+    const turnStart = Date.now();                  // for elapsed-timer (UI-04)
 
     let acc = "";          // text streamed so far (shown live)
     let finalReply = "";   // canonical answer from the result event (used for the voice)
@@ -256,6 +282,7 @@
     // offline → error event with no text), fall back to /api/ask, which degrades to the
     // local Ollama brain. Reuses the existing sync path so the source badge still works.
     const fallbackToAsk = async () => {
+      if (timerId) { clearInterval(timerId); timerId = null; }
       try {
         const r = await fetch("/api/ask", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -280,6 +307,11 @@
     const finish = () => {
       if (done) return;
       done = true;
+      if (timerId) {
+        clearInterval(timerId); timerId = null;
+        const t = ph.querySelector(".activity .activity-timer");
+        if (t) t.textContent = fmtElapsed(Date.now() - turnStart);
+      }
       if (es) { es.close(); es = null; }
       if (source === "error" && !acc.trim() && !finalReply) { fallbackToAsk(); return; }
       const reply = acc.trim() || finalReply || "…";
@@ -312,15 +344,28 @@
         } else if (ev.type === "tool_use") {
           const panel = ensureActivityPanel(ph); ph.classList.remove("ph");
           addStepCard(panel, { name: ev.name, input: ev.input || {} });
+          if (!timerId) {
+            timerId = setInterval(() => {
+              const t = ensureActivityPanel(ph).querySelector(".activity-timer");
+              if (t) t.textContent = fmtElapsed(Date.now() - turnStart);
+            }, 1000);
+          }
           elHint.textContent = "🔧 " + (ev.name || (lang === "pt" ? "ação" : "action")) + "…";
         } else if (ev.type === "screenshot") {
           const panel = ensureActivityPanel(ph); ph.classList.remove("ph");
           if (ev.data) addShot(panel, ev.data);
+          if (!timerId) {
+            timerId = setInterval(() => {
+              const t = ensureActivityPanel(ph).querySelector(".activity-timer");
+              if (t) t.textContent = fmtElapsed(Date.now() - turnStart);
+            }, 1000);
+          }
           elHint.textContent = lang === "pt" ? "📸 capturando a tela…" : "📸 capturing the screen…";
         } else if (ev.type === "result") {
           finalReply = ev.text || "";
         } else if (ev.type === "error") {
           source = "error";
+          addErrorChip(ph, ev.text);
           if (!acc) acc = ev.text || (lang === "pt" ? "Algo deu errado." : "Something went wrong.");
         }
         // {"type":"done"} also arrives, but the named "done" event below is what finalizes.
@@ -331,6 +376,7 @@
       // surfaces here; finalize with whatever we have and stop EventSource from retrying.
       es.onerror = finish;
     } catch (e) {
+      if (timerId) { clearInterval(timerId); timerId = null; }
       if (es) { es.close(); es = null; }
       // /api/turn unreachable or malformed — try the sync path (also covers offline → Ollama).
       fallbackToAsk();
@@ -402,6 +448,7 @@
   // turn finishes on its own — we just stop listening to it.
   async function newChat() {
     if (es) { es.close(); es = null; }
+    if (timerId) { clearInterval(timerId); timerId = null; }
     if (window.speechSynthesis) speechSynthesis.cancel();
     conversing = false; stopRecog();
     busy = false;
