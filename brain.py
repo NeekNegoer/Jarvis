@@ -20,6 +20,7 @@ import json
 import os
 import shutil
 import subprocess
+import threading
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -131,6 +132,10 @@ class Brain:
             enable_computer_use = MCP_CONFIG.exists()
         self.computer_use = enable_computer_use
 
+        # Per-Brain lock: used by the server worker to guarantee single-writer access per session
+        # (protects the MCP stdio pipe and self.session_id from concurrent turns).
+        self._lock = threading.Lock()
+
     def _build_cmd(self, user_text: str) -> list[str]:
         cmd = [self.claude, "-p", user_text, "--output-format", "json",
                "--system-prompt", self.persona]
@@ -144,6 +149,97 @@ class Brain:
             cmd += ["--mcp-config", str(MCP_CONFIG), "--strict-mcp-config",
                     "--allowedTools", *COMPUTER_TOOLS]
         return cmd
+
+    def _build_stream_cmd(self, user_text: str) -> list:
+        """Like _build_cmd but sets --output-format stream-json + --verbose (REQUIRED).
+
+        CRITICAL: stream-json refuses to run without --verbose.
+        Error: 'When using --print, --output-format=stream-json requires --verbose'
+        [VERIFIED: empirical run 2026-06-05]
+        """
+        cmd = self._build_cmd(user_text)
+        idx = cmd.index("--output-format")
+        cmd[idx + 1] = "stream-json"
+        cmd.insert(idx + 2, "--verbose")  # REQUIRED — stream-json refuses without it
+        return cmd
+
+    # NOTE: tool_use/screenshot block shapes below are MEDIUM confidence (not verified on a real
+    # computer-use turn). Run one turn with JARVIS_STREAM_DEBUG=1 and inspect stream_debug.ndjson
+    # to confirm field names (per RESEARCH Open Question 1).
+    def think_stream(self, user_text: str):
+        """Generator: yields ActivityEvent dicts; updates self.session_id on result.
+
+        Yields, in order (thinking blocks are filtered):
+          {"type":"text","text": str}
+          {"type":"tool_use","name": str, "input": dict}   # MEDIUM confidence shape
+          {"type":"screenshot","data": str}                 # MEDIUM confidence shape
+          {"type":"result","text": str}
+          {"type":"done"}
+          {"type":"error","text": str}  # only on non-zero exit without a result
+        Raises BrainOffline on network-style failures.
+        """
+        cmd = self._build_stream_cmd(user_text)
+        timeout = COMPUTER_TIMEOUT if self.computer_use else CHAT_TIMEOUT  # noqa: F841 (future use)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        final_text = ""
+        try:
+            for raw_line in proc.stdout:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                # Opt-in raw-line debug trace to confirm MEDIUM-confidence event shapes.
+                if os.environ.get("JARVIS_STREAM_DEBUG"):
+                    try:
+                        with open(HERE / "stream_debug.ndjson", "a", encoding="utf-8") as _dbg:
+                            _dbg.write(line + "\n")
+                    except Exception:
+                        pass
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                t = obj.get("type", "")
+                if t == "assistant":
+                    for block in (obj.get("message") or {}).get("content", []):
+                        bt = block.get("type", "")
+                        if bt == "thinking":
+                            continue  # skip internal reasoning [VERIFIED: appears before text block]
+                        elif bt == "text":
+                            text = block.get("text", "")
+                            if text:
+                                yield {"type": "text", "text": text}
+                        elif bt == "tool_use":
+                            # [ASSUMED: field names not verified on a real computer-use turn]
+                            yield {
+                                "type": "tool_use",
+                                "name": block.get("name"),
+                                "input": block.get("input", {}),
+                            }
+                elif t == "tool_result":  # [ASSUMED: not verified in this run]
+                    for block in obj.get("content", []):
+                        if block.get("type") == "image":
+                            yield {
+                                "type": "screenshot",
+                                "data": block.get("source", {}).get("data", ""),
+                            }
+                elif t == "result":
+                    final_text = (obj.get("result") or "").strip()
+                    if obj.get("session_id"):
+                        self.session_id = obj["session_id"]  # [VERIFIED: empirical run 2026-06-05]
+                    yield {"type": "result", "text": final_text or "Okay."}
+                # skip type in {"system", "rate_limit_event"} — no user-facing content [VERIFIED]
+        finally:
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+        if proc.returncode != 0 and not final_text:
+            stderr = proc.stderr.read()
+            if any(w in stderr.lower()
+                   for w in ("network", "connect", "timeout", "offline", "fetch failed")):
+                raise BrainOffline(stderr.strip())
+            yield {"type": "error", "text": stderr[:200] or "Something went wrong."}
+        yield {"type": "done"}
 
     def think(self, user_text: str) -> str:
         """Send what the user said to Claude (Max plan) and return the spoken reply."""
