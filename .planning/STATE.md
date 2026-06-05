@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-06-05T18:52:40.918Z"
-last_activity: 2026-06-05 -- Phase 01 execution started
+last_updated: "2026-06-05T19:03:33Z"
+last_activity: 2026-06-05 -- Phase 01 Plan 01 complete (TDD RED scaffold)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 01 (brain-unlock) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 01
-Last activity: 2026-06-05 -- Phase 01 execution started
+Plan: 2 of 4
+Status: Executing Phase 01 (Plan 01 complete — TDD RED scaffold)
+Last activity: 2026-06-05 -- Phase 01 Plan 01 complete (TDD RED scaffold)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -64,6 +64,8 @@ Recent decisions affecting current work:
 - Google Auth packages pinned for Python 3.9: google-auth==2.49.2, google-auth-oauthlib==1.3.1, google-auth-httplib2==0.3.1, google-api-python-client==2.197.0
 - Echo cancellation uses threading.Event gate in ears.py/wake.py — NOT browser getUserMedia({echoCancellation:true}) which does not reach sounddevice
 - Service worker must pass /api/* straight through — never cache SSE streams
+- pytest installed into project venv (3.9-compatible); Brain test fixture stubs shutil.which to bypass real claude binary
+- MockBrain class-level concurrency counters enable serialize-vs-parallel overlap assertions in test_server_streaming.py
 
 ### Pending Todos
 
