@@ -30,6 +30,7 @@ everything else fails, that loop (understand → act → report, trustworthily) 
 - ✓ Raycast commands (Open Jarvis, Talk, Ask, Stop) — v1
 - ✓ Browser UI in Chrome — browser-native STT/TTS, `/api/ask` · `/api/health` · `/api/reset`, new-chat / source badges / barge-in — v1
 - ✓ AppleScript recipes for Mail (draft-only) / Calendar / Notes / Reminders / Music / browser — v1
+- ✓ UI stays responsive during long tasks — brain-lock removed; non-blocking `/api/turn` job-queue + `/api/stream` SSE + per-session serialization + cross-origin 403 (CORE-01/02/03, SEC-01) — Phase 1 (milestone 2)
 
 ### Active
 
@@ -45,7 +46,7 @@ everything else fails, that loop (understand → act → report, trustworthily) 
 - [ ] Reuse skills/capabilities from Pietro's other Claude Code projects (an importable skill bridge)
 
 **Robustness & trust**
-- [ ] UI stays responsive during long tasks — fix the brain-lock so computer-use turns (up to 600s) don't freeze the interface
+- [x] UI stays responsive during long tasks — brain-lock removed; non-freeze streaming server shipped — Phase 1
 - [ ] Echo cancellation — hands-free / wake-word works without headphones (the mic ignores Jarvis's own voice)
 
 ### Out of Scope
@@ -107,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 after initialization (milestone 2)*
+*Last updated: 2026-06-05 — Phase 1 (Brain Unlock) complete*
