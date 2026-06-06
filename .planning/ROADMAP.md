@@ -11,7 +11,7 @@ Milestone 2 transforms Jarvis from a working v1 into a genuinely great daily dri
 ## Phases
 
 - [ ] **Phase 1: Brain Unlock** - Remove the blocking brain lock; add job-queue SSE and CSRF protection so the UI stays responsive
-- [ ] **Phase 2: Live Activity UI** - Surface every tool call, inline screenshot, elapsed timer, and error chip in a live activity panel
+- [x] **Phase 2: Live Activity UI** - Surface every tool call, inline screenshot, elapsed timer, and error chip in a live activity panel (completed 2026-06-06)
 - [ ] **Phase 3: Skill System + Google Classroom** - Ship the pluggable skill loader and the first real skill: Google Classroom
 - [ ] **Phase 4: PWA** - Make Jarvis installable as a standalone Chrome app with a dock icon
 - [ ] **Phase 5: Echo Cancellation** - Gate the mic during TTS so hands-free mode works without headphones
@@ -47,7 +47,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Fix think_stream to emit screenshot events from `user` tool_result blocks (+ test)
 - [x] 02-02-PLAN.md — Activity panel in app.js: bilingual step cards, inline screenshots+lightbox, timer, collapse, error chip
-- [ ] 02-03-PLAN.md — Style the panel to match the dark/gold aesthetic + human-verify checkpoint
+- [x] 02-03-PLAN.md — Style the panel to match the dark/gold aesthetic + human-verify checkpoint
 **UI hint**: yes
 
 ### Phase 3: Skill System + Google Classroom
@@ -87,7 +87,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Brain Unlock | 4/4 | Complete | 2026-06-05 |
-| 2. Live Activity UI | 2/3 | In Progress|  |
+| 2. Live Activity UI | 3/3 | Complete    | 2026-06-06 |
 | 3. Skill System + Google Classroom | 0/TBD | Not started | - |
 | 4. PWA | 0/TBD | Not started | - |
 | 5. Echo Cancellation | 0/TBD | Not started | - |

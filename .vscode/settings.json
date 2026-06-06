@@ -2,5 +2,10 @@
   // Impede o VSCode de "digitar sozinho" o `source .venv/bin/activate`
   // toda vez que um terminal abre (isso interrompia a digitação).
   // Use `.venv/bin/python ...` explicitamente, ou ative o venv manualmente quando quiser.
-  "python.terminal.activateEnvironment": false
+  "python.terminal.activateEnvironment": false,
+
+  // Impede o VSCode de tentar anexar um debugger (popup "Select debugger") toda vez
+  // que um comando `node` roda no terminal — era o que travava os comandos do gsd-tools.
+  "debug.javascript.autoAttachFilter": "disabled",
+  "debug.javascript.autoAttach": "disabled"
 }

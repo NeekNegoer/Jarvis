@@ -31,6 +31,7 @@ everything else fails, that loop (understand → act → report, trustworthily) 
 - ✓ Browser UI in Chrome — browser-native STT/TTS, `/api/ask` · `/api/health` · `/api/reset`, new-chat / source badges / barge-in — v1
 - ✓ AppleScript recipes for Mail (draft-only) / Calendar / Notes / Reminders / Music / browser — v1
 - ✓ UI stays responsive during long tasks — brain-lock removed; non-blocking `/api/turn` job-queue + `/api/stream` SSE + per-session serialization + cross-origin 403 (CORE-01/02/03, SEC-01) — Phase 1 (milestone 2)
+- ✓ Live activity view — during Mac-control turns, plain-language step cards, inline screenshots + lightbox, elapsed timer, expand/collapse, error chip (UI-02/03/04) — Phase 2 (milestone 2)
 
 ### Active
 
@@ -38,7 +39,7 @@ everything else fails, that loop (understand → act → report, trustworthily) 
 
 **Chrome UI**
 - [ ] Installable PWA — Jarvis opens in its own window with a dock icon (manifest, service worker, icons), no browser tabs/address bar
-- [ ] Live activity view — during Mac-control turns, see what Jarvis is doing (steps / tool calls / screenshots) instead of just "working…"
+- [x] Live activity view — during Mac-control turns, step cards + inline screenshots + timer + error chip — Phase 2
 
 **Extensible skills**
 - [ ] A skill system the brain can discover and invoke (pluggable, self-contained skills)
@@ -108,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 — Phase 1 (Brain Unlock) complete*
+*Last updated: 2026-06-06 — Phase 2 (Live Activity UI) complete*
