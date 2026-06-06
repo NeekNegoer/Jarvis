@@ -228,3 +228,133 @@ body.state-listening .mic::after {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
 }
 @media (max-height: 620px) { .orb { --size: 120px; } .transcript { } }
+
+/* ── Phase 2: Live Activity Panel (Plan 02-03) ────────────────────────────────
+   Additive only — no existing rules changed.
+   Class names are PINNED to exactly what app.js emits (see 02-02-SUMMARY.md).
+   Only existing :root tokens + #e08a8a (established error red) are used.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Panel container — sits inside .msg.jv, before .body */
+.activity {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 2px solid rgba(231, 183, 90, 0.30);
+  padding-left: 10px;
+}
+
+/* Header row — right-aligns the timer */
+.activity-head {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Elapsed mm:ss counter */
+.activity-timer {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--muted);
+}
+
+/* Step card */
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: var(--bubble-jv);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: background .2s;
+  flex-wrap: wrap;
+}
+.step:hover { border-color: rgba(231, 183, 90, 0.35); }
+
+/* Emoji icon — fixed width keeps labels aligned */
+.step-icon {
+  flex: none;
+  line-height: 1.4;
+}
+
+/* Plain-language bilingual label */
+.step-label {
+  flex: 1;
+  color: var(--paper);
+  word-break: break-word;
+}
+
+/* JSON detail block — hidden until .step.expanded */
+.step-detail {
+  display: none;
+  white-space: pre-wrap;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 6px 0 0;
+  max-height: 200px;
+  overflow: auto;
+  width: 100%;
+}
+
+/* Expanded step — reveal detail + subtle gold tint */
+.step.expanded { background: rgba(231, 183, 90, 0.08); }
+.step.expanded .step-detail { display: block; }
+
+/* Screenshot thumbnail wrapper */
+.shot {
+  display: inline-block;
+  margin: 2px 0;
+}
+
+/* Thumbnail image */
+.shot img {
+  max-width: 160px;
+  max-height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--faint);
+  cursor: zoom-in;
+  display: block;
+}
+
+/* Fullscreen lightbox — singleton appended to body by ensureLightbox() */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  place-items: center;
+  background: rgba(11, 10, 14, 0.86);
+  cursor: zoom-out;
+}
+.lightbox.open { display: grid; }
+.lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: 14px;
+  box-shadow: 0 10px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Error chip */
+.activity-error {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  background: rgba(220, 90, 90, 0.16);
+  color: #e08a8a;
+  border: 1px solid rgba(220, 90, 90, 0.4);
+}
+
+/* Entrance animation — reuses the existing `pop` keyframe;
+   prefers-reduced-motion override above already handles the kill-switch */
+.step,
+.shot,
+.activity-error {
+  animation: pop .3s cubic-bezier(.2, .8, .2, 1) both;
+}
